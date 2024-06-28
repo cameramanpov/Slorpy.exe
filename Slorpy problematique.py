@@ -45,6 +45,10 @@ class fenprincipale(QMainWindow):
         historique_btn.triggered.connect(self.afficher_historique)
         navbar.addAction(historique_btn)
 
+        nouvel_onglet_btn = QAction('Nouvel Onglet', self)
+        nouvel_onglet_btn.triggered.connect(self.ouvrir_nouvel_onglet)
+        navbar.addAction(nouvel_onglet_btn)
+
         self.url_barre = QLineEdit()
         self.url_barre.returnPressed.connect(self.navigation)
         navbar.addWidget(self.url_barre)
@@ -77,7 +81,7 @@ class fenprincipale(QMainWindow):
                     historique = []
 
         domaine = QUrl(url).host().replace('www.', '').split('.')[0]
-        historique.append(domaine)
+        historique.append(url.toString())
         with open(historique_path, 'w') as f:
             json.dump(historique, f)
 
@@ -87,6 +91,7 @@ class fenprincipale(QMainWindow):
         layout = QVBoxLayout()
 
         historique_list = QListWidget()
+        historique_list.itemDoubleClicked.connect(self.ouvrir_historique_lien)
         historique_path = os.path.expanduser('~/.historique.json')
         if os.path.exists(historique_path):
             with open(historique_path, 'r') as f:
@@ -102,12 +107,16 @@ class fenprincipale(QMainWindow):
         historique_window.exec_()
 
     def ouvrir_nouvel_onglet(self, i=-1):
-        if i == -1:
-            navigateur = QWebEngineView()
-            navigateur.setUrl(QUrl('http://google.com'))
-            i = self.tabs.addTab(navigateur, "Nouvel Onglet")
-            self.tabs.setCurrentIndex(i)
-            navigateur.urlChanged.connect(self.update_url)
+        navigateur = QWebEngineView()
+        navigateur.setUrl(QUrl('http://google.com'))
+        i = self.tabs.addTab(navigateur, "Nouvel Onglet")
+        self.tabs.setCurrentIndex(i)
+        navigateur.urlChanged.connect(self.update_url)
+
+    def ouvrir_historique_lien(self, item):
+        url = item.text()
+        self.ouvrir_nouvel_onglet()
+        self.tabs.currentWidget().setUrl(QUrl(url))
 
     def fermer_onglet(self, i):
         if self.tabs.count() > 1:
